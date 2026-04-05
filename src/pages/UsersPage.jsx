@@ -188,39 +188,57 @@ export default function UsersPage() {
               </div>
 
               <div className="mt-6 space-y-4">
-                {members.map((member) => (
-                  <div
-                    key={member.email}
-                    className="flex flex-col gap-4 rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 font-semibold text-slate-950">
-                        {member.name.charAt(0)}
+                {members
+                  .filter(member =>
+                    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.team.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((member) => (
+                    <div
+                      key={member.email}
+                      className="flex flex-col gap-4 rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5 md:flex-row md:items-center md:justify-between hover:bg-white/5 transition"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 font-semibold text-slate-950">
+                          {member.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{member.name}</h3>
+                          <p className="text-sm text-slate-400">{member.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">{member.name}</h3>
-                        <p className="text-sm text-slate-400">{member.email}</p>
-                      </div>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-3 text-sm">
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{member.role}</span>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{member.team}</span>
-                      <span
-                        className={`rounded-full px-3 py-1 ${
-                          member.status === "Active"
-                            ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
-                            : "border border-amber-400/20 bg-amber-400/10 text-amber-300"
-                        }`}
-                      >
-                        {member.status}
-                      </span>
-                      <button className="rounded-xl p-2 hover:bg-white/10">
-                        <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="rounded-full border border-sky-400/20 bg-sky-400/10 text-sky-300 px-3 py-1">{member.role}</span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{member.team}</span>
+                        <span
+                          className={`rounded-full px-3 py-1 ${
+                            member.status === "Active"
+                              ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                              : "border border-amber-400/20 bg-amber-400/10 text-amber-300"
+                          }`}
+                        >
+                          {member.status}
+                        </span>
+                        <button className="rounded-xl p-2 hover:bg-white/10 transition">
+                          <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                        </button>
+                      </div>
                     </div>
+                  ))}
+                
+                {members.filter(member =>
+                  member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  member.team.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-5 py-8 text-center text-slate-400">
+                    No members found matching "{searchTerm}"
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

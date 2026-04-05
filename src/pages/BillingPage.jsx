@@ -222,20 +222,40 @@ export default function BillingPage() {
                   <span>Status</span>
                 </div>
 
-                {invoices.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-5 items-center border-t border-white/10 px-5 py-4 text-sm"
-                  >
-                    <span className="font-medium">{item.id}</span>
-                    <span className="text-slate-300">{item.description}</span>
-                    <span className="text-slate-300">{item.amount}</span>
-                    <span className="text-slate-300">{item.date}</span>
-                    <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                      {item.status}
-                    </span>
+                {invoices
+                  .filter(item => 
+                    item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.status.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-5 items-center border-t border-white/10 px-5 py-4 text-sm hover:bg-white/5 transition"
+                    >
+                      <span className="font-medium text-sky-300">{item.id}</span>
+                      <span className="text-slate-300">{item.description}</span>
+                      <span className="text-slate-300 font-semibold">{item.amount}</span>
+                      <span className="text-slate-300">{item.date}</span>
+                      <span className={`w-fit rounded-full border px-3 py-1 text-xs font-medium ${
+                        item.status === 'Paid' ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' :
+                        item.status === 'Pending' ? 'border-yellow-400/20 bg-yellow-400/10 text-yellow-300' :
+                        'border-slate-400/20 bg-slate-400/10 text-slate-300'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
+                
+                {invoices.filter(item => 
+                  item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  item.status.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-5 py-8 text-center text-slate-400">
+                    No invoices found matching "{searchTerm}"
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

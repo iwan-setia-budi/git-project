@@ -203,30 +203,50 @@ export default function ReportsPage() {
                   <span>Status</span>
                 </div>
 
-                {reports.map((item) => (
-                  <div
-                    key={item.name}
-                    className="grid grid-cols-5 items-center border-t border-white/10 px-5 py-4 text-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900/60 border border-white/10">
-                        <FileText className="h-4 w-4 text-sky-300" />
+                {reports
+                  .filter(item =>
+                    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.status.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((item) => (
+                    <div
+                      key={item.name}
+                      className="grid grid-cols-5 items-center border-t border-white/10 px-5 py-4 text-sm hover:bg-white/5 transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900/60 border border-white/10">
+                          <FileText className="h-4 w-4 text-sky-300" />
+                        </div>
+                        <span className="font-medium text-sky-300">{item.name}</span>
                       </div>
-                      <span className="font-medium">{item.name}</span>
+                      <span className="text-slate-300">{item.category}</span>
+                      <span className="text-slate-300 font-semibold">{item.format}</span>
+                      <span className="text-slate-300">{item.created}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${
+                          item.status === 'Ready' ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-300' :
+                          item.status === 'Processing' ? 'border border-blue-400/20 bg-blue-400/10 text-blue-300' :
+                          'border border-slate-400/20 bg-slate-400/10 text-slate-300'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <button className="rounded-lg p-2 hover:bg-white/10 transition">
+                          <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-slate-300">{item.category}</span>
-                    <span className="text-slate-300">{item.format}</span>
-                    <span className="text-slate-300">{item.created}</span>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                        {item.status}
-                      </span>
-                      <button className="rounded-lg p-2 hover:bg-white/10">
-                        <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                      </button>
-                    </div>
+                  ))}
+                
+                {reports.filter(item =>
+                  item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  item.status.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-5 py-8 text-center text-slate-400">
+                    No reports found matching "{searchTerm}"
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

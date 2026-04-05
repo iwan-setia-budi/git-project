@@ -1,7 +1,16 @@
-function cx(...parts) {
-  return parts.filter(Boolean).join(" ");
-}
+import PropTypes from 'prop-types';
+import { cx } from '@/utils/classname';
 
+/**
+ * Button component with variant and size support
+ * @param {string} className - Additional CSS classes
+ * @param {string} variant - Button style: 'default' or 'outline'
+ * @param {string} size - Button size: 'default' or 'icon'
+ * @param {string} type - HTML button type
+ * @param {boolean} disabled - Disabled state
+ * @param {React.ReactNode} children - Button content
+ * @param {object} props - Additional HTML attributes
+ */
 export function Button({
   className = "",
   variant = "default",
@@ -30,8 +39,18 @@ export function Button({
         className
       )}
       {...props}
+      aria-disabled={disabled}
     >
       {children}
     </button>
   );
 }
+
+Button.propTypes = {
+  className: PropTypes.string,
+  variant: PropTypes.oneOf(['default', 'outline']),
+  size: PropTypes.oneOf(['default', 'icon']),
+  type: PropTypes.string,
+  disabled: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};

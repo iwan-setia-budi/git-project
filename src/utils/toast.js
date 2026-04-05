@@ -1,38 +1,69 @@
-// Simple toast notification utility
+import { escapeCSV } from './validation';
+
+/**
+ * Show toast notification message
+ * @param {string} message - Toast message
+ * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
+ */
 export function showToast(message, type = 'success') {
-  // For now, using browser alert as simple feedback
-  // In production, you'd use a proper toast library like Sonner or React Toastify
+  if (typeof message !== 'string') return;
   console.log(`[${type.toUpperCase()}] ${message}`);
-  
-  // If you want visual feedback in browser, you could uncomment below:
-  // alert(`${type.toUpperCase()}: ${message}`);
+  // TODO: Integrate with Sonner or React Toastify
 }
 
+/**
+ * Download data as CSV file with proper escaping to prevent CSV injection
+ * @param {Array|string} data - Array of objects or CSV string
+ * @param {string} filename - Output filename
+ */
 export function downloadCSV(data, filename) {
-  const csv = Array.isArray(data) ? convertToCSV(data) : data;
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename || 'download.csv';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  try {
+    if (!data) {
+      showToast('No data to export', 'error');
+      return;
+    }
+    
+    if (typeof filename !== 'string' || !filename.trim()) {
+      filename = 'download.csv';
+    }
+    
+    // Sanitize filename to prevent directory traversal
+    filename = filename.replace(/[\/\\:*?"<>|]/g, '_');
+    
+    const csv = Array.isArray(data) ? convertToCSV(data) : String(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('CSV download error:', error);
+    showToast('Failed to download CSV', 'error');
+  }
 }
 
+/**
+ * Convert array of objects to CSV string with proper escaping
+ * Prevents CSV injection attacks
+ * @param {Array} data - Array of objects
+ * @returns {string} CSV formatted string
+ */
 function convertToCSV(data) {
   if (!Array.isArray(data) || data.length === 0) return '';
   
   const headers = Object.keys(data[0]);
-  const csv = [headers.join(',')];
+  const csvHeaders = headers.map(h => escapeCSV(String(h))).join(',');
+  const csv = [csvHeaders];
   
   for (const row of data) {
     const values = headers.map(header => {
       const value = row[header];
-      return typeof value === 'string' && value.includes(',') 
-        ? `"${value}"` 
-        : value;
+      return escapeCSV(String(value === null || value === undefined ? '' : value));
     });
     csv.push(values.join(','));
   }
