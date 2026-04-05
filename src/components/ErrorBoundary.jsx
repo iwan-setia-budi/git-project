@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { AlertCircle } from 'lucide-react';
 
 /**
@@ -40,7 +41,7 @@ export default class ErrorBoundary extends React.Component {
             <p className="text-slate-300 mb-6">
               We encountered an unexpected error. Try refreshing the page or contact support if the problem persists.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="mt-4 text-left text-sm bg-slate-900/50 p-3 rounded-lg overflow-auto max-h-48">
                 <summary className="cursor-pointer font-semibold text-slate-300 mb-2">
                   Error Details (Dev Only)
@@ -65,3 +66,7 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+ErrorBoundary.propTypes = {
+  children: PropTypes.node.isRequired,
+};

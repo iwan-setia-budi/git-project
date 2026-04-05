@@ -1,4 +1,66 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { setAuthToken } from "@/services/authService";
+import { sanitizeInput, isValidEmail } from "@/utils/validation";
+import { showToast } from "@/utils/toast";
+
 export default function PremiumLoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Validate input
+      const cleanEmail = sanitizeInput(email.trim());
+      const cleanPassword = sanitizeInput(password);
+
+      if (!cleanEmail || !isValidEmail(cleanEmail)) {
+        showToast("Email tidak valid", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!cleanPassword || cleanPassword.length < 6) {
+        showToast("Password minimal 6 karakter", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      // Demo login - dalam production ini akan fetch ke backend
+      // const response = await apiRequest("/auth/login", {
+      //   method: "POST",
+      //   body: { email: cleanEmail, password: cleanPassword }
+      // });
+      // const token = response.token;
+
+      // Demo token generation (untuk testing saja)
+      const token = `demo_token_${Date.now()}`;
+
+      setAuthToken(token);
+      if (rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      }
+
+      showToast("Login berhasil! Selamat datang.", "success");
+      
+      // Redirect ke dashboard
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 500);
+    } catch (error) {
+      console.error("Login error:", error);
+      showToast("Login gagal. Periksa email dan password Anda.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.14),transparent_30%)]" />
@@ -51,33 +113,45 @@ export default function PremiumLoginPage() {
               </div>
             </div>
 
-            <form className="space-y-5">
+            <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-200">Email address</label>
                 <input
                   type="email"
                   placeholder="name@company.com"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none ring-0 placeholder:text-slate-400 transition focus:border-sky-400/70"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none ring-0 placeholder:text-slate-400 transition focus:border-sky-400/70 disabled:opacity-60"
                 />
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="block text-sm font-medium text-slate-200">Password</label>
-                  <button type="button" className="text-sm text-sky-300 transition hover:text-sky-200">
+                  <button type="button" className="text-sm text-sky-300 transition hover:text-sky-200" disabled={isLoading}>
                     Forgot password?
                   </button>
                 </div>
                 <input
                   type="password"
                   placeholder="Enter your password"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none ring-0 placeholder:text-slate-400 transition focus:border-sky-400/70"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none ring-0 placeholder:text-slate-400 transition focus:border-sky-400/70 disabled:opacity-60"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-4 text-sm text-slate-300">
                 <label className="flex items-center gap-3">
-                  <input type="checkbox" className="h-4 w-4 rounded border-white/20 bg-slate-900" />
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-white/20 bg-slate-900 disabled:opacity-60 cursor-pointer" 
+                  />
                   Remember me
                 </label>
                 <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">
@@ -87,9 +161,10 @@ export default function PremiumLoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-gradient-to-r from-sky-400 via-cyan-400 to-indigo-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-xl transition hover:scale-[1.01]"
+                disabled={isLoading}
+                className="w-full rounded-2xl bg-gradient-to-r from-sky-400 via-cyan-400 to-indigo-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-xl transition hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isLoading ? "Signing in..." : "Sign In"}
               </button>
 
               <div className="relative py-2 text-center text-sm text-slate-400">
@@ -100,13 +175,15 @@ export default function PremiumLoginPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                  disabled={isLoading}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Google
                 </button>
                 <button
                   type="button"
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                  disabled={isLoading}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Microsoft
                 </button>
@@ -115,9 +192,9 @@ export default function PremiumLoginPage() {
 
             <p className="mt-8 text-center text-sm text-slate-400">
               Belum punya akun?{' '}
-              <a href="#" className="font-medium text-sky-300 hover:text-sky-200">
+              <button type="button" disabled={isLoading} className="font-medium text-sky-300 hover:text-sky-200 disabled:opacity-60">
                 Create account
-              </a>
+              </button>
             </p>
           </div>
         </section>
