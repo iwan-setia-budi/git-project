@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Trash2,
   FileIcon,
@@ -51,6 +51,7 @@ import {
   getRecentFiles,
   recordFileAccess,
 } from "@/services/driveService";
+import { getMasterList } from "@/services/masterDataService";
 import { showToast } from "@/utils/toast";
 
 const SORT_OPTIONS = [
@@ -62,15 +63,6 @@ const SORT_OPTIONS = [
   { value: "size-asc", label: "Terkecil" },
 ];
 
-const TYPE_OPTIONS = [
-  { value: "", label: "Semua Tipe" },
-  { value: "pdf", label: "PDF" },
-  { value: "image", label: "Gambar" },
-  { value: "video", label: "Video" },
-  { value: "file", label: "Lainnya" },
-];
-
-const TAG_PRESETS = ["Penting", "Sekolah", "Keuangan", "Kesehatan", "Kerja", "Pribadi"];
 const VIEWS = { FOLDERS: "folders", SEARCH: "search", RECENT: "recent", TRASH: "trash" };
 
 function formatSize(bytes) {
@@ -241,6 +233,12 @@ export default function FileManager() {
 
   const [draggedFile, setDraggedFile] = useState(null);
   const [dropTargetFolder, setDropTargetFolder] = useState(null);
+
+  const typeOptions = useMemo(() => getMasterList("driveFileTypes"), []);
+  const tagPresets = useMemo(
+    () => getMasterList("driveTagPresets").map(item => item.value),
+    []
+  );
 
   const refresh = useCallback(() => {
     setFolders(getFolders());
@@ -592,7 +590,7 @@ export default function FileManager() {
             onChange={e => setTypeFilter(e.target.value)}
             className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white"
           >
-            {TYPE_OPTIONS.map(o => (
+            {typeOptions.map(o => (
               <option key={o.value} value={o.value} className="bg-slate-800">
                 {o.label}
               </option>
@@ -1115,7 +1113,7 @@ export default function FileManager() {
         <Modal title={`Tag untuk ${tagTarget.name}`} onClose={() => setTagTarget(null)}>
           <p className="mb-3 text-sm text-slate-400">Pilih atau ketuk untuk toggle tag:</p>
           <div className="mb-4 flex flex-wrap gap-2">
-            {TAG_PRESETS.map(tag => (
+            {tagPresets.map(tag => (
               <button
                 key={tag}
                 onClick={() => setTagValue(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]))}

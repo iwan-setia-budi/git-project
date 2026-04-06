@@ -1,28 +1,47 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, CalendarRange, Plus, Repeat, Sparkles, UserRound } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { addSchedule, getScheduleCategories } from "@/services/scheduleService";
+import {
+  addSchedule,
+  getScheduleCategories,
+  getScheduleRecurrenceOptions,
+} from "@/services/scheduleService";
 import { getFamilyMembers } from "@/services/familyService";
 import { showToast } from "@/utils/toast";
 
 export default function AddSchedule() {
   const navigate = useNavigate();
+  const categories = useMemo(() => getScheduleCategories(), []);
   const [formData, setFormData] = useState({
     title: "",
-    category: "activity",
+    category: categories[0]?.name || "activity",
     date: new Date().toISOString().split("T")[0],
     startTime: "08:00",
     endTime: "09:00",
     member: "",
+    recurring: "none",
+    priority: "medium",
     description: "",
   });
-  const [categories] = useState(getScheduleCategories());
+  const [recurrenceOptions] = useState(getScheduleRecurrenceOptions());
   const [members] = useState(getFamilyMembers());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!categories.length) return;
+    if (!categories.some(category => category.name === formData.category)) {
+      setFormData(prev => ({ ...prev, category: categories[0].name }));
+    }
+  }, [categories, formData.category]);
+
+  const selectedCategory = useMemo(
+    () => categories.find(item => item.name === formData.category),
+    [categories, formData.category]
+  );
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -31,21 +50,23 @@ export default function AddSchedule() {
 
   const handleSubmit = e => {
     e.preventDefault();
-    if (!formData.title || !formData.date || !formData.startTime) {
+    if (!formData.title || !formData.date || !formData.startTime || !formData.endTime) {
       showToast("Silakan isi semua field yang diperlukan", "error");
+      return;
+    }
+
+    if (formData.endTime <= formData.startTime) {
+      showToast("Jam selesai harus lebih besar dari jam mulai", "error");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      addSchedule({
-        ...formData,
-        date: new Date(formData.date),
-      });
+      addSchedule(formData);
       showToast("Jadwal berhasil ditambahkan!", "success");
       navigate("/schedule");
     } catch (error) {
-      showToast("Gagal menambahkan jadwal", "error");
+      showToast(error.message || "Gagal menambahkan jadwal", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,12 +85,31 @@ export default function AddSchedule() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">Tambah Jadwal</h1>
-            <p className="text-slate-300">Buat jadwal baru untuk keluarga</p>
+            <p className="text-slate-300">Buat jadwal keluarga yang rapi, modern, dan profesional</p>
           </div>
         </div>
 
-        <Card className="rounded-2xl backdrop-blur-xl">
+        <Card className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
           <CardContent className="p-8">
+            <div className="mb-6 grid gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-4 sm:grid-cols-3">
+              <div className="rounded-lg bg-slate-950/60 p-3">
+                <p className="text-xs text-slate-400">Kategori</p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: selectedCategory?.color || "#7dd3fc" }}>
+                  {selectedCategory?.label || "Aktivitas"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-950/60 p-3">
+                <p className="text-xs text-slate-400">Pengulangan</p>
+                <p className="mt-1 text-sm font-semibold text-cyan-300">
+                  {recurrenceOptions.find(item => item.value === formData.recurring)?.label || "Sekali"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-950/60 p-3">
+                <p className="text-xs text-slate-400">Prioritas</p>
+                <p className="mt-1 text-sm font-semibold text-amber-300 capitalize">{formData.priority}</p>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="mb-2 block text-sm font-medium">Judul Jadwal</label>
@@ -91,26 +131,71 @@ export default function AddSchedule() {
                   value={formData.category}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  style={{ colorScheme: "dark" }}
                 >
                   {categories.map(cat => (
-                    <option key={cat.name} value={cat.name}>
+                    <option key={cat.name} value={cat.name} className="bg-slate-900 text-slate-100">
                       {cat.label}
                     </option>
                   ))}
                 </select>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                    <Repeat className="h-4 w-4 text-cyan-300" />
+                    Pola Jadwal
+                  </label>
+                  <select
+                    name="recurring"
+                    value={formData.recurring}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
+                  >
+                    {recurrenceOptions.map(option => (
+                      <option key={option.value} value={option.value} className="bg-slate-900 text-slate-100">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-amber-300" />
+                    Prioritas
+                  </label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
+                  >
+                    <option className="bg-slate-900 text-slate-100" value="low">Low</option>
+                    <option className="bg-slate-900 text-slate-100" value="medium">Medium</option>
+                    <option className="bg-slate-900 text-slate-100" value="high">High</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="mb-2 block text-sm font-medium">Anggota Keluarga</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <UserRound className="h-4 w-4 text-emerald-300" />
+                  Berdasarkan Anggota Keluarga
+                </label>
                 <select
                   name="member"
                   value={formData.member}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  style={{ colorScheme: "dark" }}
                 >
-                  <option value="">Pilih anggota keluarga</option>
+                  <option value="" className="bg-slate-900 text-slate-100">Pilih anggota keluarga</option>
                   {members.map(member => (
-                    <option key={member.id} value={member.name}>
+                    <option key={member.id} value={member.name} className="bg-slate-900 text-slate-100">
                       {member.name}
                     </option>
                   ))}
@@ -119,7 +204,10 @@ export default function AddSchedule() {
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="mb-2 block text-sm font-medium">Tanggal</label>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                    <CalendarRange className="h-4 w-4 text-sky-300" />
+                    Tanggal
+                  </label>
                   <Input
                     type="date"
                     name="date"
@@ -127,6 +215,7 @@ export default function AddSchedule() {
                     onChange={handleChange}
                     required
                     className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
                   />
                 </div>
                 <div>
@@ -138,6 +227,7 @@ export default function AddSchedule() {
                     onChange={handleChange}
                     required
                     className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
                   />
                 </div>
                 <div>
@@ -149,6 +239,7 @@ export default function AddSchedule() {
                     onChange={handleChange}
                     required
                     className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
                   />
                 </div>
               </div>

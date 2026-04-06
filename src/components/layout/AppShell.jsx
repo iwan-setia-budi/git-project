@@ -14,6 +14,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { clearAuthToken } from "@/services/authService";
+import { useReminderEngine } from "@/hooks/useReminderEngine";
 import { showToast } from "@/utils/toast";
 
 const sidebarItems = [
@@ -37,6 +38,7 @@ const sidebarItems = [
 ];
 
 export default function AppShell() {
+  useReminderEngine();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);

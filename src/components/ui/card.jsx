@@ -5,8 +5,8 @@ import PropTypes from 'prop-types';
  * @param {string} className - Additional CSS classes
  * @param {React.ReactNode} children - Card content
  */
-export function Card({ className = "", children }) {
-  return <div className={className}>{children}</div>;
+export function Card({ className = "", children, ...props }) {
+  return <div className={className} {...props}>{children}</div>;
 }
 
 /**
@@ -14,8 +14,8 @@ export function Card({ className = "", children }) {
  * @param {string} className - Additional CSS classes
  * @param {React.ReactNode} children - Content
  */
-export function CardContent({ className = "", children }) {
-  return <div className={className}>{children}</div>;
+export function CardContent({ className = "", children, ...props }) {
+  return <div className={className} {...props}>{children}</div>;
 }
 
 Card.propTypes = {

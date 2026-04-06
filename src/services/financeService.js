@@ -1,4 +1,24 @@
-// Mock data for transactions
+import { getMasterList } from "@/services/masterDataService";
+
+const STORAGE_KEY = "family_transactions";
+
+function toDateString(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().split("T")[0];
+  }
+  return date.toISOString().split("T")[0];
+}
+
+function mapMasterCategory(item) {
+  return {
+    id: item.id,
+    name: item.label,
+    value: item.value,
+    color: item.color || "#64748b",
+  };
+}
+
 const initialTransactions = [
   {
     id: 1,
@@ -6,7 +26,7 @@ const initialTransactions = [
     amount: 5000000,
     category: "gaji",
     description: "Gaji bulanan",
-    date: new Date(2024, 3, 1),
+    date: toDateString(new Date()),
     member: "Ayah",
   },
   {
@@ -15,7 +35,7 @@ const initialTransactions = [
     amount: 1500000,
     category: "makan",
     description: "Belanja groceries",
-    date: new Date(2024, 3, 5),
+    date: toDateString(new Date()),
     member: "Ibu",
   },
   {
@@ -24,76 +44,105 @@ const initialTransactions = [
     amount: 800000,
     category: "listrik",
     description: "Tagihan listrik",
-    date: new Date(2024, 3, 10),
+    date: toDateString(new Date()),
     member: "Ayah",
   },
 ];
 
-const expenseCategories = [
-  { id: 1, name: "Makan", color: "#ef4444" },
-  { id: 2, name: "Sekolah", color: "#f59e0b" },
-  { id: 3, name: "Listrik", color: "#eab308" },
-  { id: 4, name: "Internet", color: "#84cc16" },
-  { id: 5, name: "Transport", color: "#22c55e" },
-  { id: 6, name: "Kesehatan", color: "#10b981" },
-  { id: 7, name: "Cicilan", color: "#06b6d4" },
-  { id: 8, name: "Tabungan", color: "#3b82f6" },
-];
-
-// Get all transactions
-export function getTransactions() {
-  const stored = localStorage.getItem("family_transactions");
-  return stored ? JSON.parse(stored) : initialTransactions;
+function normalizeTransaction(transaction) {
+  const type = transaction?.type === "income" ? "income" : "expense";
+  return {
+    id: Number(transaction?.id),
+    type,
+    amount: Math.max(Number(transaction?.amount) || 0, 0),
+    category: String(transaction?.category || "lainnya").toLowerCase(),
+    description: String(transaction?.description || "").trim(),
+    date: toDateString(transaction?.date),
+    member: String(transaction?.member || "").trim(),
+  };
 }
 
-// Add transaction
+function saveTransactions(transactions) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+}
+
+function applyFilters(transactions, filters = {}) {
+  const { year, month, member = "all", type = "all", category = "all" } = filters;
+  return transactions.filter(transaction => {
+    const date = new Date(transaction.date);
+    if (typeof year === "number" && date.getFullYear() !== year) return false;
+    if (typeof month === "number" && date.getMonth() !== month) return false;
+    if (member !== "all" && transaction.member !== member) return false;
+    if (type !== "all" && transaction.type !== type) return false;
+    if (category !== "all" && transaction.category !== category) return false;
+    return true;
+  });
+}
+
+function sumByType(transactions, type) {
+  return transactions
+    .filter(transaction => transaction.type === type)
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
+export function getTransactions() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  const parsed = stored ? JSON.parse(stored) : initialTransactions;
+  const normalized = Array.isArray(parsed)
+    ? parsed.map(normalizeTransaction)
+    : initialTransactions.map(normalizeTransaction);
+  saveTransactions(normalized);
+  return normalized;
+}
+
 export function addTransaction(transaction) {
   const transactions = getTransactions();
+  const normalized = normalizeTransaction(transaction);
+
+  if (!normalized.amount || normalized.amount <= 0) {
+    throw new Error("Jumlah transaksi harus lebih besar dari 0");
+  }
+
+  if (!normalized.category) {
+    throw new Error("Kategori wajib dipilih");
+  }
+
   const newTransaction = {
-    ...transaction,
-    id: Math.max(...transactions.map(t => t.id), 0) + 1,
+    ...normalized,
+    id: Math.max(...transactions.map(item => item.id), 0) + 1,
   };
+
   transactions.push(newTransaction);
-  localStorage.setItem("family_transactions", JSON.stringify(transactions));
+  saveTransactions(transactions);
   return newTransaction;
 }
 
-// Update transaction
 export function updateTransaction(id, updates) {
   const transactions = getTransactions();
-  const index = transactions.findIndex(t => t.id === id);
-  if (index !== -1) {
-    transactions[index] = { ...transactions[index], ...updates };
-    localStorage.setItem("family_transactions", JSON.stringify(transactions));
-    return transactions[index];
+  const index = transactions.findIndex(transaction => transaction.id === id);
+  if (index === -1) return null;
+
+  const updated = normalizeTransaction({ ...transactions[index], ...updates, id });
+  if (!updated.amount || updated.amount <= 0) {
+    throw new Error("Jumlah transaksi harus lebih besar dari 0");
   }
-  return null;
+
+  transactions[index] = updated;
+  saveTransactions(transactions);
+  return updated;
 }
 
-// Delete transaction
 export function deleteTransaction(id) {
   const transactions = getTransactions();
-  const filtered = transactions.filter(t => t.id !== id);
-  localStorage.setItem("family_transactions", JSON.stringify(filtered));
+  const filtered = transactions.filter(transaction => transaction.id !== id);
+  saveTransactions(filtered);
   return true;
 }
 
-// Get monthly summary
-export function getMonthlySummary(year, month) {
-  const transactions = getTransactions();
-  const filtered = transactions.filter(t => {
-    const date = new Date(t.date);
-    return date.getFullYear() === year && date.getMonth() === month;
-  });
-
-  const income = filtered
-    .filter(t => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const expense = filtered
-    .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
+export function getMonthlySummary(year, month, options = {}) {
+  const transactions = applyFilters(getTransactions(), { year, month, member: options.member || "all" });
+  const income = sumByType(transactions, "income");
+  const expense = sumByType(transactions, "expense");
   return {
     income,
     expense,
@@ -101,35 +150,98 @@ export function getMonthlySummary(year, month) {
   };
 }
 
-// Get expense by category
-export function getExpenseByCategory(year, month) {
-  const transactions = getTransactions();
-  const filtered = transactions.filter(t => {
-    const date = new Date(t.date);
-    return (
-      t.type === "expense" &&
-      date.getFullYear() === year &&
-      date.getMonth() === month
-    );
+export function getMonthlySummaryWithComparison(year, month, options = {}) {
+  const current = getMonthlySummary(year, month, options);
+  const previousDate = new Date(year, month - 1, 1);
+  const previous = getMonthlySummary(previousDate.getFullYear(), previousDate.getMonth(), options);
+
+  const expenseDelta = previous.expense === 0 ? 0 : ((current.expense - previous.expense) / previous.expense) * 100;
+  const incomeDelta = previous.income === 0 ? 0 : ((current.income - previous.income) / previous.income) * 100;
+
+  return {
+    ...current,
+    previous,
+    expenseDelta,
+    incomeDelta,
+  };
+}
+
+export function getExpenseByCategory(year, month, options = {}) {
+  const filtered = applyFilters(getTransactions(), {
+    year,
+    month,
+    member: options.member || "all",
+    type: "expense",
   });
 
   const byCategory = {};
-  filtered.forEach(t => {
-    if (!byCategory[t.category]) {
-      byCategory[t.category] = 0;
-    }
-    byCategory[t.category] += t.amount;
-  });
+  for (const transaction of filtered) {
+    byCategory[transaction.category] = (byCategory[transaction.category] || 0) + transaction.amount;
+  }
 
   return byCategory;
 }
 
-// Get expense categories
-export function getExpenseCategories() {
-  return expenseCategories;
+export function getFinanceAnalytics(year, month, options = {}) {
+  const scoped = applyFilters(getTransactions(), {
+    year,
+    month,
+    member: options.member || "all",
+  });
+
+  const transactionCount = scoped.length;
+  const incomeCount = scoped.filter(item => item.type === "income").length;
+  const expenseCount = scoped.filter(item => item.type === "expense").length;
+  const averageTransaction = transactionCount
+    ? Math.round(scoped.reduce((total, item) => total + item.amount, 0) / transactionCount)
+    : 0;
+
+  const topExpenseCategory = Object.entries(
+    scoped
+      .filter(item => item.type === "expense")
+      .reduce((acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + item.amount;
+        return acc;
+      }, {})
+  ).sort((a, b) => b[1] - a[1])[0] || null;
+
+  const topMember = Object.entries(
+    scoped.reduce((acc, item) => {
+      if (!item.member) return acc;
+      acc[item.member] = (acc[item.member] || 0) + item.amount;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1])[0] || null;
+
+  return {
+    transactionCount,
+    incomeCount,
+    expenseCount,
+    averageTransaction,
+    topExpenseCategory,
+    topMember,
+  };
 }
 
-// Get savings target
+export function getTransactionsByFilters(filters = {}) {
+  const sorted = [...applyFilters(getTransactions(), filters)].sort(
+    (first, second) => new Date(second.date) - new Date(first.date)
+  );
+  return sorted;
+}
+
+export function getExpenseCategories() {
+  return getMasterList("financeExpenseCategories").map(mapMasterCategory);
+}
+
+export function getIncomeCategories() {
+  return getMasterList("financeIncomeCategories").map(mapMasterCategory);
+}
+
+export function getFinanceCategoriesByType(type) {
+  return type === "income" ? getIncomeCategories() : getExpenseCategories();
+}
+
 export function getSavingsTarget() {
   const stored = localStorage.getItem("savings_target");
   return stored
@@ -137,12 +249,16 @@ export function getSavingsTarget() {
     : {
         target: 50000000,
         current: 15000000,
-        name: "Liburan Keluarga 2025",
+        name: "Liburan Keluarga 2026",
       };
 }
 
-// Update savings target
 export function updateSavingsTarget(data) {
-  localStorage.setItem("savings_target", JSON.stringify(data));
-  return data;
+  const sanitized = {
+    name: String(data?.name || "Target Tabungan").trim(),
+    target: Math.max(Number(data?.target) || 0, 0),
+    current: Math.max(Number(data?.current) || 0, 0),
+  };
+  localStorage.setItem("savings_target", JSON.stringify(sanitized));
+  return sanitized;
 }

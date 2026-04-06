@@ -1,19 +1,34 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bell,
+  ChevronDown,
+  ChevronUp,
+  Database,
   Globe,
   Lock,
   Palette,
+  Pencil,
+  PlusCircle,
+  RotateCcw,
   Save,
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
   UserCog,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/utils/toast";
+import {
+  addMasterItem,
+  deleteMasterItem,
+  getMasterData,
+  reorderMasterItem,
+  resetMasterData,
+  updateMasterItem,
+} from "@/services/masterDataService";
 
 const settingStats = [
   {
@@ -63,8 +78,39 @@ const notifications = [
   "Notifikasi undangan anggota",
 ];
 
+const masterConfigs = [
+  { key: "financeExpenseCategories", label: "Finance - Kategori Pengeluaran", hasColor: true },
+  { key: "financeIncomeCategories", label: "Finance - Kategori Pemasukan", hasColor: true },
+  { key: "scheduleCategories", label: "Jadwal - Kategori", hasColor: true },
+  { key: "reminderCategories", label: "Reminder - Kategori", hasColor: true },
+  { key: "driveFileTypes", label: "Penyimpanan - Tipe File", hasColor: false },
+  { key: "driveTagPresets", label: "Penyimpanan - Preset Tag", hasColor: false },
+];
+
+function getDefaultDraft(config) {
+  return {
+    label: "",
+    value: "",
+    color: config?.hasColor ? "#38bdf8" : "",
+  };
+}
+
 export default function SettingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [masterData, setMasterData] = useState(getMasterData());
+  const [selectedMasterKey, setSelectedMasterKey] = useState(masterConfigs[0].key);
+  const selectedMasterConfig = useMemo(
+    () => masterConfigs.find(config => config.key === selectedMasterKey) || masterConfigs[0],
+    [selectedMasterKey]
+  );
+  const [draftItem, setDraftItem] = useState(getDefaultDraft(masterConfigs[0]));
+  const [editingId, setEditingId] = useState(null);
+
+  const currentMasterItems = masterData[selectedMasterKey] || [];
+
+  const refreshMasterData = () => {
+    setMasterData(getMasterData());
+  };
 
   const handleSaveSettings = () => {
     showToast("Pengaturan berhasil disimpan! Preferensi Anda telah diperbarui.");
@@ -80,6 +126,80 @@ export default function SettingsPage() {
 
   const handleNotificationSettings = () => {
     showToast("Panel preferensi notifikasi dibuka - Atur email dan notifikasi push");
+  };
+
+  const handleSelectMaster = key => {
+    const config = masterConfigs.find(item => item.key === key) || masterConfigs[0];
+    setSelectedMasterKey(key);
+    setDraftItem(getDefaultDraft(config));
+    setEditingId(null);
+  };
+
+  const handleEditMasterItem = item => {
+    setEditingId(item.id);
+    setDraftItem({
+      label: item.label,
+      value: item.value,
+      color: item.color || (selectedMasterConfig.hasColor ? "#38bdf8" : ""),
+    });
+  };
+
+  const handleSaveMasterItem = () => {
+    try {
+      const payload = {
+        label: draftItem.label.trim(),
+        value: draftItem.value.trim().toLowerCase(),
+        ...(selectedMasterConfig.hasColor ? { color: draftItem.color || "#38bdf8" } : {}),
+      };
+
+      if (!payload.label || !payload.value) {
+        showToast("Label dan value wajib diisi", "error");
+        return;
+      }
+
+      if (editingId) {
+        updateMasterItem(selectedMasterKey, editingId, payload);
+        showToast("Master data berhasil diperbarui", "success");
+      } else {
+        addMasterItem(selectedMasterKey, payload);
+        showToast("Master data berhasil ditambahkan", "success");
+      }
+
+      refreshMasterData();
+      setEditingId(null);
+      setDraftItem(getDefaultDraft(selectedMasterConfig));
+    } catch (error) {
+      showToast(error.message || "Gagal menyimpan master data", "error");
+    }
+  };
+
+  const handleDeleteMasterItem = id => {
+    if (!confirm("Yakin ingin menghapus item master data ini?")) return;
+    try {
+      deleteMasterItem(selectedMasterKey, id);
+      refreshMasterData();
+      showToast("Item master data berhasil dihapus", "success");
+      if (editingId === id) {
+        setEditingId(null);
+        setDraftItem(getDefaultDraft(selectedMasterConfig));
+      }
+    } catch (error) {
+      showToast(error.message || "Gagal menghapus item", "error");
+    }
+  };
+
+  const handleMoveMasterItem = (id, direction) => {
+    reorderMasterItem(selectedMasterKey, id, direction);
+    refreshMasterData();
+  };
+
+  const handleResetMaster = () => {
+    if (!confirm("Reset semua master data ke default?")) return;
+    resetMasterData();
+    refreshMasterData();
+    setEditingId(null);
+    setDraftItem(getDefaultDraft(selectedMasterConfig));
+    showToast("Semua master data berhasil direset", "success");
   };
 
   return (
@@ -232,6 +352,163 @@ export default function SettingsPage() {
                   <p className="mt-2 text-sm leading-6 text-slate-300">
                     Branding aplikasi dapat disesuaikan untuk kebutuhan keluarga dan pengelolaan rumah tangga.
                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="mt-6">
+          <Card className="rounded-[2rem] border-white/10 bg-white/5 text-white shadow-2xl backdrop-blur-2xl">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-3">
+                  <Database className="h-5 w-5 text-sky-300" />
+                  <div>
+                    <p className="text-sm text-sky-300">Master Data</p>
+                    <h2 className="mt-1 text-2xl font-semibold">Kelola Semua Dropdown</h2>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-white/10 bg-white/5"
+                    onClick={handleResetMaster}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reset Default
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-[360px_1fr]">
+                <div className="space-y-2">
+                  {masterConfigs.map(config => (
+                    <button
+                      key={config.key}
+                      onClick={() => handleSelectMaster(config.key)}
+                      className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${
+                        selectedMasterKey === config.key
+                          ? "border-sky-400/50 bg-sky-500/10 text-sky-200"
+                          : "border-white/10 bg-slate-950/30 text-slate-300 hover:bg-white/10"
+                      }`}
+                    >
+                      {config.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div>
+                  <div className="mb-4 rounded-xl border border-white/10 bg-slate-950/30 p-4">
+                    <p className="text-sm text-slate-300">{selectedMasterConfig.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Item: {currentMasterItems.length}. Perubahan akan otomatis dipakai pada form Finance, Jadwal, Reminder, dan Penyimpanan.
+                    </p>
+                  </div>
+
+                  <div className="mb-4 grid gap-3 rounded-xl border border-white/10 bg-slate-950/30 p-4 md:grid-cols-3">
+                    <Input
+                      value={draftItem.label}
+                      onChange={event => setDraftItem(prev => ({ ...prev, label: event.target.value }))}
+                      placeholder="Label tampil"
+                    />
+                    <Input
+                      value={draftItem.value}
+                      onChange={event => setDraftItem(prev => ({ ...prev, value: event.target.value }))}
+                      placeholder="Value internal"
+                    />
+                    {selectedMasterConfig.hasColor ? (
+                      <input
+                        type="color"
+                        value={draftItem.color || "#38bdf8"}
+                        onChange={event => setDraftItem(prev => ({ ...prev, color: event.target.value }))}
+                        className="h-10 w-full rounded-lg border border-white/10 bg-slate-900 p-1"
+                      />
+                    ) : (
+                      <div className="flex items-center rounded-lg border border-dashed border-white/10 px-3 text-xs text-slate-500">
+                        Tanpa warna
+                      </div>
+                    )}
+
+                    <div className="md:col-span-3 flex flex-wrap gap-2">
+                      <Button onClick={handleSaveMasterItem} className="rounded-xl">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        {editingId ? "Simpan Perubahan" : "Tambah Item"}
+                      </Button>
+                      {editingId ? (
+                        <Button
+                          variant="outline"
+                          className="rounded-xl border-white/10 bg-white/5"
+                          onClick={() => {
+                            setEditingId(null);
+                            setDraftItem(getDefaultDraft(selectedMasterConfig));
+                          }}
+                        >
+                          Batal Edit
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {currentMasterItems.map(item => (
+                      <div
+                        key={item.id}
+                        className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          {selectedMasterConfig.hasColor ? (
+                            <span
+                              className="h-4 w-4 rounded-full border border-white/20"
+                              style={{ backgroundColor: item.color || "#38bdf8" }}
+                            />
+                          ) : null}
+                          <div>
+                            <p className="text-sm font-medium text-slate-100">{item.label}</p>
+                            <p className="text-xs text-slate-400">{item.value}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg border-white/10 bg-white/5 px-2"
+                            onClick={() => handleMoveMasterItem(item.id, "up")}
+                            title="Naikan"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg border-white/10 bg-white/5 px-2"
+                            onClick={() => handleMoveMasterItem(item.id, "down")}
+                            title="Turunkan"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="rounded-lg border-white/10 bg-white/5"
+                            onClick={() => handleEditMasterItem(item)}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="rounded-lg border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                            onClick={() => handleDeleteMasterItem(item.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardContent>

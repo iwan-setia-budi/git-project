@@ -21,3 +21,29 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+input.reminder-date-input,
+input.reminder-time-input {
+  color-scheme: dark;
+}
+
+input.reminder-date-input::-webkit-calendar-picker-indicator,
+input.reminder-time-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.95) brightness(1.1);
+  opacity: 0.95;
+}
+
+input.reminder-date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}
+
+input.reminder-date-input::-webkit-datetime-edit,
+input.reminder-time-input::-webkit-datetime-edit {
+  color: #f8fafc;
+}
+
+input.reminder-date-input::-webkit-datetime-edit-text,
+input.reminder-time-input::-webkit-datetime-edit-text {
+  color: #cbd5e1;
+}

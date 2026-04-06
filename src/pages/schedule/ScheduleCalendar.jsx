@@ -4,18 +4,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { getSchedulesByMonth } from "@/services/scheduleService";
+import { getFamilyMembers } from "@/services/familyService";
 
 export default function ScheduleCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState([]);
+  const [selectedMember, setSelectedMember] = useState("all");
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    setMembers(getFamilyMembers().map(member => member.name));
+  }, []);
 
   useEffect(() => {
     const monthSchedules = getSchedulesByMonth(
       currentDate.getFullYear(),
-      currentDate.getMonth()
+      currentDate.getMonth(),
+      { member: selectedMember }
     );
     setSchedules(monthSchedules);
-  }, [currentDate]);
+  }, [currentDate, selectedMember]);
 
   const getDaysInMonth = date => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -38,7 +47,7 @@ export default function ScheduleCalendar() {
 
   const getSchedulesForDay = day => {
     if (!day) return [];
-    return schedules.filter(s => new Date(s.date).getDate() === day);
+    return schedules.filter(s => new Date(s.occurrenceDate).getDate() === day);
   };
 
   const previousMonth = () => {
@@ -77,6 +86,32 @@ export default function ScheduleCalendar() {
 
         <Card className="rounded-2xl backdrop-blur-xl">
           <CardContent className="p-6">
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedMember("all")}
+                className={`rounded-lg px-3 py-1.5 text-sm ${
+                  selectedMember === "all"
+                    ? "bg-cyan-400 text-slate-950"
+                    : "border border-white/10 bg-white/5 text-white"
+                }`}
+              >
+                Semua
+              </button>
+              {members.map(member => (
+                <button
+                  key={member}
+                  onClick={() => setSelectedMember(member)}
+                  className={`rounded-lg px-3 py-1.5 text-sm ${
+                    selectedMember === member
+                      ? "bg-cyan-400 text-slate-950"
+                      : "border border-white/10 bg-white/5 text-white"
+                  }`}
+                >
+                  {member}
+                </button>
+              ))}
+            </div>
+
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {currentDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" })}
@@ -91,7 +126,7 @@ export default function ScheduleCalendar() {
               </div>
             </div>
 
-            <div className="grid gap-1">
+            <div className="grid grid-cols-7 gap-1">
               {/* Days Header */}
               {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map(day => (
                 <div
@@ -112,11 +147,18 @@ export default function ScheduleCalendar() {
                 >
                   {day && (
                     <>
-                      <p className="mb-1 text-sm font-bold">{day}</p>
+                      <button
+                        onClick={() => setSelectedDay(day)}
+                        className={`mb-1 rounded-md px-1.5 text-sm font-bold ${
+                          selectedDay === day ? "bg-cyan-400 text-slate-950" : "text-white"
+                        }`}
+                      >
+                        {day}
+                      </button>
                       <div className="space-y-1">
                         {getSchedulesForDay(day).slice(0, 2).map(schedule => (
                           <div
-                            key={schedule.id}
+                            key={`${schedule.id}-${schedule.occurrenceDate}`}
                             className="truncate rounded bg-blue-500/20 px-2 py-1 text-xs text-blue-300"
                           >
                             {schedule.title}
@@ -133,6 +175,29 @@ export default function ScheduleCalendar() {
                 </div>
               ))}
             </div>
+
+            {selectedDay ? (
+              <div className="mt-5 rounded-xl border border-white/10 bg-slate-950/40 p-4">
+                <p className="mb-2 text-sm font-semibold text-cyan-300">
+                  Detail {selectedDay} {currentDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" })}
+                </p>
+                <div className="space-y-2">
+                  {getSchedulesForDay(selectedDay).length > 0 ? (
+                    getSchedulesForDay(selectedDay).map(item => (
+                      <div key={`${item.id}-${item.occurrenceDate}-detail`} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-xs text-slate-400">
+                          {item.startTime} - {item.endTime} | {item.member || "Umum"}
+                        </p>
+                        {item.description ? <p className="mt-1 text-sm text-slate-300">{item.description}</p> : null}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">Tidak ada jadwal di tanggal ini.</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

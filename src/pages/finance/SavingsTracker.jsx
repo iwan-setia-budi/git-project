@@ -37,10 +37,28 @@ export default function SavingsTracker() {
   const handleSubmit = e => {
     e.preventDefault();
     try {
+      const target = Number(formData.target);
+      const current = Number(formData.current);
+
+      if (!formData.name.trim()) {
+        showToast("Nama target wajib diisi", "error");
+        return;
+      }
+
+      if (!target || target <= 0) {
+        showToast("Nilai target harus lebih besar dari 0", "error");
+        return;
+      }
+
+      if (current < 0) {
+        showToast("Nilai terkumpul tidak boleh minus", "error");
+        return;
+      }
+
       const updated = {
-        name: formData.name,
-        target: parseInt(formData.target),
-        current: parseInt(formData.current),
+        name: formData.name.trim(),
+        target,
+        current,
       };
       updateSavingsTarget(updated);
       setSavingsTarget(updated);
@@ -55,6 +73,7 @@ export default function SavingsTracker() {
 
   const percentage = (savingsTarget.current / savingsTarget.target) * 100;
   const remaining = savingsTarget.target - savingsTarget.current;
+  const monthlySuggestion = remaining > 0 ? Math.ceil(remaining / 12) : 0;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -121,6 +140,13 @@ export default function SavingsTracker() {
                       Rp {remaining.toLocaleString("id-ID")}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm">
+                  <p className="text-cyan-200">
+                    Estimasi agar target tercapai 12 bulan: 
+                    <span className="font-semibold"> Rp {monthlySuggestion.toLocaleString("id-ID")}</span> per bulan.
+                  </p>
                 </div>
               </CardContent>
             </Card>

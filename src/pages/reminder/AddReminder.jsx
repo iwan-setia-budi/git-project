@@ -1,42 +1,84 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, CalendarDays, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { addReminder, getReminderCategories } from "@/services/reminderService";
+import { addReminderAsync, getReminderCategories } from "@/services/reminderService";
 import { showToast } from "@/utils/toast";
 
 export default function AddReminder() {
   const navigate = useNavigate();
+  const dateInputRef = useRef(null);
+  const today = new Date().toISOString().split("T")[0];
+  const categories = useMemo(() => getReminderCategories(), []);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "utility",
-    date: new Date().toISOString().split("T")[0],
+    category: categories[0]?.name || "utilitas",
+    date: today,
     time: "10:00",
+    remindBefore: "10m",
+    repeat: "none",
+    assignee: "",
   });
-  const [categories] = useState(getReminderCategories());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!categories.length) return;
+    if (!categories.some(category => category.name === formData.category)) {
+      setFormData(prev => ({ ...prev, category: categories[0].name }));
+    }
+  }, [categories, formData.category]);
+
+  const repeatOptions = [
+    { value: "none", label: "Tidak berulang" },
+    { value: "daily", label: "Harian" },
+    { value: "weekly", label: "Mingguan" },
+    { value: "monthly", label: "Bulanan" },
+    { value: "yearly", label: "Tahunan" },
+  ];
+
+  const remindBeforeOptions = [
+    { value: "none", label: "Tepat waktu" },
+    { value: "10m", label: "10 menit sebelum" },
+    { value: "1h", label: "1 jam sebelum" },
+  ];
 
   const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!formData.title || !formData.date || !formData.time) {
-      showToast("Silakan isi semua field yang diperlukan", "error");
+    const trimmedTitle = formData.title.trim();
+    if (!trimmedTitle) {
+      showToast("Judul wajib diisi", "error");
+      return;
+    }
+
+    if (!formData.time) {
+      showToast("Jam wajib diisi", "error");
+      return;
+    }
+
+    const pickedDate = new Date(`${formData.date}T00:00:00`);
+    const minDate = new Date(`${today}T00:00:00`);
+    if (pickedDate < minDate) {
+      showToast("Tanggal minimal hari ini", "error");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      addReminder({
+      await addReminderAsync({
         ...formData,
-        date: new Date(formData.date),
+        title: trimmedTitle,
+        description: formData.description.trim(),
+        assignee: formData.assignee.trim(),
+        date: formData.date,
       });
       showToast("Reminder berhasil ditambahkan!", "success");
       navigate("/reminder");
@@ -45,6 +87,17 @@ export default function AddReminder() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOpenDatePicker = () => {
+    if (!dateInputRef.current) return;
+
+    if (typeof dateInputRef.current.showPicker === "function") {
+      dateInputRef.current.showPicker();
+      return;
+    }
+
+    dateInputRef.current.focus();
   };
 
   return (
@@ -86,10 +139,15 @@ export default function AddReminder() {
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-slate-100"
+                  style={{ colorScheme: "dark" }}
                 >
                   {categories.map(cat => (
-                    <option key={cat.name} value={cat.name}>
+                    <option
+                      key={cat.name}
+                      value={cat.name}
+                      className="bg-slate-900 text-slate-100"
+                    >
                       {cat.label}
                     </option>
                   ))}
@@ -99,14 +157,27 @@ export default function AddReminder() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium">Tanggal</label>
-                  <Input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
-                  />
+                  <div className="relative">
+                    <Input
+                      ref={dateInputRef}
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleChange}
+                      min={today}
+                      required
+                      className="reminder-date-input rounded-lg border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white"
+                      style={{ colorScheme: "dark" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleOpenDatePicker}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-200 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Pilih tanggal"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium">Jam</label>
@@ -116,9 +187,65 @@ export default function AddReminder() {
                     value={formData.time}
                     onChange={handleChange}
                     required
-                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    className="reminder-time-input rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    style={{ colorScheme: "dark" }}
                   />
                 </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Ingatkan</label>
+                  <select
+                    name="remindBefore"
+                    value={formData.remindBefore}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-slate-100"
+                    style={{ colorScheme: "dark" }}
+                  >
+                    {remindBeforeOptions.map(option => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        className="bg-slate-900 text-slate-100"
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Pengulangan</label>
+                  <select
+                    name="repeat"
+                    value={formData.repeat}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-slate-100"
+                    style={{ colorScheme: "dark" }}
+                  >
+                    {repeatOptions.map(option => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        className="bg-slate-900 text-slate-100"
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Untuk Anggota (Opsional)</label>
+                <Input
+                  type="text"
+                  name="assignee"
+                  placeholder="Contoh: Ayah"
+                  value={formData.assignee}
+                  onChange={handleChange}
+                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                />
               </div>
 
               <div>

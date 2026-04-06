@@ -1,45 +1,74 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
-  getTransactions,
   getMonthlySummary,
   getExpenseByCategory,
-  getExpenseCategories,
+  getFinanceAnalytics,
 } from "@/services/financeService";
+
+function formatCurrency(value) {
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+}
+
+function exportReportCsv(year, reports) {
+  const header = ["Bulan", "Pemasukan", "Pengeluaran", "Saldo"];
+  const rows = reports.map(report => [report.month, report.income, report.expense, report.balance]);
+  const csv = [header, ...rows]
+    .map(cols => cols.map(col => `"${String(col).replaceAll('"', '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `laporan-keuangan-${year}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
 
 export default function FinanceReport() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [reports, setReports] = useState([]);
-  const [categories] = useState(getExpenseCategories());
-
+  const [yearSummary, setYearSummary] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+    transactionCount: 0,
+  });
   useEffect(() => {
-    const allTransactions = getTransactions();
     const monthlyReports = [];
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let totalTransactions = 0;
 
     for (let month = 0; month < 12; month++) {
       const summary = getMonthlySummary(selectedYear, month);
       const expenseData = getExpenseByCategory(selectedYear, month);
+      const analytics = getFinanceAnalytics(selectedYear, month);
+
+      totalIncome += summary.income;
+      totalExpense += summary.expense;
+      totalTransactions += analytics.transactionCount;
+
       monthlyReports.push({
         month: new Date(selectedYear, month, 1).toLocaleDateString("id-ID", {
           month: "long",
         }),
         ...summary,
         expenses: expenseData,
+        transactionCount: analytics.transactionCount,
       });
     }
 
     setReports(monthlyReports);
+    setYearSummary({
+      income: totalIncome,
+      expense: totalExpense,
+      balance: totalIncome - totalExpense,
+      transactionCount: totalTransactions,
+    });
   }, [selectedYear]);
-
-  const getCategoryColor = categoryName => {
-    const category = categories.find(
-      c => c.name.toLowerCase() === categoryName.toLowerCase()
-    );
-    return category?.color || "#6b7280";
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -71,38 +100,72 @@ export default function FinanceReport() {
                 </option>
               ))}
             </select>
-            <Button className="gap-2">
+            <Button onClick={() => exportReportCsv(selectedYear, reports)} className="gap-2">
               <Download className="h-4 w-4" />
               Export
             </Button>
           </div>
         </div>
 
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
+          <Card className="rounded-xl border border-emerald-400/20 bg-emerald-500/10">
+            <CardContent className="p-4">
+              <p className="text-xs text-slate-300">Total Pemasukan</p>
+              <p className="mt-2 text-xl font-bold text-emerald-300">{formatCurrency(yearSummary.income)}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl border border-rose-400/20 bg-rose-500/10">
+            <CardContent className="p-4">
+              <p className="text-xs text-slate-300">Total Pengeluaran</p>
+              <p className="mt-2 text-xl font-bold text-rose-300">{formatCurrency(yearSummary.expense)}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl border border-cyan-400/20 bg-cyan-500/10">
+            <CardContent className="p-4">
+              <p className="text-xs text-slate-300">Saldo Tahunan</p>
+              <p className="mt-2 text-xl font-bold text-cyan-300">{formatCurrency(yearSummary.balance)}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl border border-white/10 bg-white/5">
+            <CardContent className="p-4">
+              <p className="text-xs text-slate-300">Jumlah Transaksi</p>
+              <p className="mt-2 text-xl font-bold text-white">{yearSummary.transactionCount}</p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Monthly Reports */}
         <div className="space-y-4">
           {reports.map((report, index) => (
-            <Card key={index} className="rounded-xl backdrop-blur-xl">
+            <Card key={index} className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl">
               <CardContent className="p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-bold capitalize">{report.month}</h3>
                   <div className="flex gap-6">
                     <div>
                       <p className="text-xs text-slate-400">Pemasukan</p>
-                      <p className="font-bold text-green-400">
-                        Rp {report.income.toLocaleString("id-ID")}
+                      <p className="flex items-center gap-1 font-bold text-green-400">
+                        <TrendingUp className="h-4 w-4" />
+                        {formatCurrency(report.income)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Pengeluaran</p>
-                      <p className="font-bold text-red-400">
-                        Rp {report.expense.toLocaleString("id-ID")}
+                      <p className="flex items-center gap-1 font-bold text-red-400">
+                        <TrendingDown className="h-4 w-4" />
+                        {formatCurrency(report.expense)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Saldo</p>
-                      <p className="font-bold text-sky-400">
-                        Rp {report.balance.toLocaleString("id-ID")}
+                      <p className="flex items-center gap-1 font-bold text-sky-400">
+                        <Wallet className="h-4 w-4" />
+                        {formatCurrency(report.balance)}
                       </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">Transaksi</p>
+                      <p className="font-bold text-slate-200">{report.transactionCount}</p>
                     </div>
                   </div>
                 </div>
@@ -115,12 +178,12 @@ export default function FinanceReport() {
                       {Object.entries(report.expenses)
                         .sort((a, b) => b[1] - a[1])
                         .map(([category, amount]) => (
-                          <div key={category} className="rounded-lg bg-white/5 p-3">
+                          <div key={category} className="rounded-lg border border-white/10 bg-white/5 p-3">
                             <p className="text-xs capitalized text-slate-400">
                               {category}
                             </p>
                             <p className="mt-1 font-bold">
-                              Rp {amount.toLocaleString("id-ID")}
+                              {formatCurrency(amount)}
                             </p>
                           </div>
                         ))}

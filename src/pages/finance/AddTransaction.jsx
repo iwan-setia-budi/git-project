@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, ReceiptText, Sparkles, UserRound } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { addTransaction, getExpenseCategories } from "@/services/financeService";
+import { addTransaction, getFinanceCategoriesByType } from "@/services/financeService";
 import { getFamilyMembers } from "@/services/familyService";
 import { showToast } from "@/utils/toast";
 
@@ -20,8 +20,24 @@ export default function AddTransaction() {
     member: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories] = useState(getExpenseCategories());
   const [members] = useState(getFamilyMembers());
+
+  const categories = useMemo(
+    () => getFinanceCategoriesByType(formData.type),
+    [formData.type]
+  );
+
+  const selectedCategory = useMemo(
+    () => categories.find(category => category.value === formData.category),
+    [categories, formData.category]
+  );
+
+  useEffect(() => {
+    if (!categories.length) return;
+    if (!categories.some(category => category.value === formData.category)) {
+      setFormData(prev => ({ ...prev, category: categories[0].value }));
+    }
+  }, [categories, formData.category]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -31,10 +47,20 @@ export default function AddTransaction() {
     }));
   };
 
+  const handleChangeType = type => {
+    const nextCategories = getFinanceCategoriesByType(type);
+    setFormData(prev => ({
+      ...prev,
+      type,
+      category: nextCategories[0]?.value || "lainnya",
+    }));
+  };
+
   const handleSubmit = e => {
     e.preventDefault();
 
-    if (!formData.amount || !formData.category) {
+    const amount = Number(formData.amount);
+    if (!amount || amount <= 0 || !formData.category) {
       showToast("Silakan isi semua field yang diperlukan", "error");
       return;
     }
@@ -43,14 +69,15 @@ export default function AddTransaction() {
       setIsSubmitting(true);
       const transaction = {
         ...formData,
-        amount: parseInt(formData.amount),
-        date: new Date(formData.date),
+        amount,
+        date: formData.date,
+        description: formData.description.trim(),
       };
       addTransaction(transaction);
       showToast("Transaksi berhasil ditambahkan!", "success");
       navigate("/finance");
     } catch (error) {
-      showToast("Gagal menambahkan transaksi", "error");
+      showToast(error.message || "Gagal menambahkan transaksi", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -75,8 +102,29 @@ export default function AddTransaction() {
         </div>
 
         {/* Form */}
-        <Card className="rounded-2xl backdrop-blur-xl">
+        <Card className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
           <CardContent className="p-8">
+            <div className="mb-6 grid gap-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-4 sm:grid-cols-3">
+              <div className="rounded-lg bg-slate-950/50 p-3">
+                <p className="text-xs text-slate-400">Jenis</p>
+                <p className="mt-1 text-sm font-semibold text-cyan-300">
+                  {formData.type === "income" ? "Pemasukan" : "Pengeluaran"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-950/50 p-3">
+                <p className="text-xs text-slate-400">Kategori</p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: selectedCategory?.color || "#7dd3fc" }}>
+                  {selectedCategory?.name || "-"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-950/50 p-3">
+                <p className="text-xs text-slate-400">Nominal</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-300">
+                  Rp {Number(formData.amount || 0).toLocaleString("id-ID")}
+                </p>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Transaction Type */}
               <div>
@@ -89,7 +137,7 @@ export default function AddTransaction() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, type: option.value }))}
+                      onClick={() => handleChangeType(option.value)}
                       className={`rounded-lg border-2 p-4 text-center font-medium transition ${
                         formData.type === option.value
                           ? `${option.color} border-current`
@@ -118,15 +166,19 @@ export default function AddTransaction() {
 
               {/* Category */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Kategori</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <ReceiptText className="h-4 w-4 text-cyan-300" />
+                  Kategori
+                </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  style={{ colorScheme: "dark" }}
                 >
                   {categories.map(cat => (
-                    <option key={cat.name} value={cat.name.toLowerCase()}>
+                    <option className="bg-slate-900 text-slate-100" key={cat.value} value={cat.value}>
                       {cat.name}
                     </option>
                   ))}
@@ -135,7 +187,10 @@ export default function AddTransaction() {
 
               {/* Description */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Keterangan</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-amber-300" />
+                  Keterangan
+                </label>
                 <Input
                   type="text"
                   name="description"
@@ -155,22 +210,27 @@ export default function AddTransaction() {
                   value={formData.date}
                   onChange={handleChange}
                   className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  style={{ colorScheme: "dark" }}
                   required
                 />
               </div>
 
               {/* Member */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Anggota Keluarga</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <UserRound className="h-4 w-4 text-emerald-300" />
+                  Anggota Keluarga
+                </label>
                 <select
                   name="member"
                   value={formData.member}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white"
+                  style={{ colorScheme: "dark" }}
                 >
-                  <option value="">Pilih anggota keluarga</option>
+                  <option className="bg-slate-900 text-slate-100" value="">Pilih anggota keluarga</option>
                   {members.map(member => (
-                    <option key={member.id} value={member.name}>
+                    <option className="bg-slate-900 text-slate-100" key={member.id} value={member.name}>
                       {member.name}
                     </option>
                   ))}
