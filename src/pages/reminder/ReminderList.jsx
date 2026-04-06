@@ -274,10 +274,10 @@ export default function ReminderList() {
                 className={`rounded-xl border ${urgency.container} backdrop-blur-xl transition-all duration-300 hover:translate-y-[-1px]`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
                     <button
                       onClick={() => handleToggleCompleted(reminder.id)}
-                      className="mt-1 text-slate-400 transition-transform hover:scale-110 hover:text-white"
+                      className="mt-1 shrink-0 text-slate-400 transition-transform hover:scale-110 hover:text-white"
                     >
                       {reminder.completed ? (
                         <Check className="h-5 w-5 text-green-400" />
@@ -285,43 +285,47 @@ export default function ReminderList() {
                         <Circle className="h-5 w-5" />
                       )}
                     </button>
-                    <div className="flex-1">
-                      <h3
-                        className={`font-semibold ${
-                          reminder.completed ? "line-through text-slate-500" : ""
-                        }`}
-                      >
-                        {reminder.title}
-                      </h3>
-                      <p className="text-sm text-slate-400">
-                        {new Date(reminder.date).toLocaleDateString("id-ID")} - {reminder.time}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          className={`font-semibold leading-snug ${
+                            reminder.completed ? "line-through text-slate-500" : ""
+                          }`}
+                        >
+                          {reminder.title}
+                        </h3>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            onClick={() => openEditModal(reminder)}
+                            className="text-cyan-300 hover:text-cyan-200"
+                            aria-label="Edit reminder"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(reminder)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-0.5 text-sm text-slate-400">
+                        {new Date(reminder.date).toLocaleDateString("id-ID")} · {reminder.time}
                       </p>
                       {reminder.assignee ? (
-                        <p className="mt-1 text-xs text-cyan-300">Untuk: {reminder.assignee}</p>
+                        <p className="mt-0.5 text-xs text-cyan-300">Untuk: {reminder.assignee}</p>
                       ) : null}
-                      {reminder.description ? <p className="mt-1 text-xs text-slate-500">{reminder.description}</p> : null}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-xs ${urgency.badge}`}>{urgency.label}</span>
-                      <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs text-yellow-300 capitalize">
-                        {reminder.category}
-                      </span>
-                      <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-300">
-                        {repeatMap[reminder.repeat] || "Tidak berulang"}
-                      </span>
-                      <button
-                        onClick={() => openEditModal(reminder)}
-                        className="text-cyan-300 hover:text-cyan-200"
-                        aria-label="Edit reminder"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(reminder)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {reminder.description ? <p className="mt-0.5 truncate text-xs text-slate-500">{reminder.description}</p> : null}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs ${urgency.badge}`}>{urgency.label}</span>
+                        <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-0.5 text-xs capitalize text-yellow-300">
+                          {reminder.category}
+                        </span>
+                        <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-xs text-cyan-300">
+                          {repeatMap[reminder.repeat] || "Tidak berulang"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

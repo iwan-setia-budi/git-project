@@ -88,11 +88,11 @@ export default function FinanceReport() {
               <p className="text-slate-300">Analisis menyeluruh untuk tahun {selectedYear}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <select
               value={selectedYear}
               onChange={e => setSelectedYear(parseInt(e.target.value))}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white"
+              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white sm:flex-none"
             >
               {[2024, 2025, 2026, 2027].map(year => (
                 <option key={year} value={year}>
@@ -100,7 +100,7 @@ export default function FinanceReport() {
                 </option>
               ))}
             </select>
-            <Button onClick={() => exportReportCsv(selectedYear, reports)} className="gap-2">
+            <Button onClick={() => exportReportCsv(selectedYear, reports)} className="flex-1 gap-2 sm:flex-none">
               <Download className="h-4 w-4" />
               Export
             </Button>
@@ -139,33 +139,33 @@ export default function FinanceReport() {
           {reports.map((report, index) => (
             <Card key={index} className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl">
               <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="text-lg font-bold capitalize">{report.month}</h3>
-                  <div className="flex gap-6">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:gap-6">
                     <div>
                       <p className="text-xs text-slate-400">Pemasukan</p>
-                      <p className="flex items-center gap-1 font-bold text-green-400">
-                        <TrendingUp className="h-4 w-4" />
-                        {formatCurrency(report.income)}
+                      <p className="flex items-center gap-1 font-bold text-green-400 text-sm sm:text-base">
+                        <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{formatCurrency(report.income)}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Pengeluaran</p>
-                      <p className="flex items-center gap-1 font-bold text-red-400">
-                        <TrendingDown className="h-4 w-4" />
-                        {formatCurrency(report.expense)}
+                      <p className="flex items-center gap-1 font-bold text-red-400 text-sm sm:text-base">
+                        <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{formatCurrency(report.expense)}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Saldo</p>
-                      <p className="flex items-center gap-1 font-bold text-sky-400">
-                        <Wallet className="h-4 w-4" />
-                        {formatCurrency(report.balance)}
+                      <p className="flex items-center gap-1 font-bold text-sky-400 text-sm sm:text-base">
+                        <Wallet className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{formatCurrency(report.balance)}</span>
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Transaksi</p>
-                      <p className="font-bold text-slate-200">{report.transactionCount}</p>
+                      <p className="font-bold text-slate-200 text-sm sm:text-base">{report.transactionCount}</p>
                     </div>
                   </div>
                 </div>
