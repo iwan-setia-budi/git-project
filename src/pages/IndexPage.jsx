@@ -1,21 +1,28 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart3, ShieldCheck, Sparkles, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Bell,
+  CalendarDays,
+  FolderOpen,
+  PiggyBank,
+  ShieldCheck,
+} from "lucide-react";
 
 const highlights = [
   {
-    title: "Lightning Fast",
-    desc: "UI responsif, loading ringan, dan pengalaman pengguna terasa instan.",
-    icon: Sparkles,
+    title: "Keuangan Keluarga",
+    desc: "Catat pemasukan, pengeluaran, laporan, dan target tabungan dalam satu alur.",
+    icon: PiggyBank,
   },
   {
-    title: "Security First",
-    desc: "Akses terproteksi, kontrol role jelas, dan audit activity yang konsisten.",
-    icon: ShieldCheck,
+    title: "Reminder Penting",
+    desc: "Ingat bayar listrik, internet, pajak kendaraan, dan agenda keluarga.",
+    icon: Bell,
   },
   {
-    title: "Scale With Team",
-    desc: "Tumbuh dari startup sampai enterprise tanpa perlu rewrite fondasi aplikasi.",
-    icon: Users,
+    title: "Jadwal & Drive",
+    desc: "Kelola agenda keluarga dan simpan dokumen penting, foto, serta video.",
+    icon: CalendarDays,
   },
 ];
 
@@ -27,19 +34,21 @@ export default function IndexPage() {
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <Link to="/" className="text-xl font-black tracking-tight">
-            MyApp
+            Family App
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm text-slate-300 md:flex">
             <a href="#fitur" className="transition hover:text-white">Fitur</a>
             <a href="#why" className="transition hover:text-white">Keunggulan</a>
-            <Link to="/analytics" className="transition hover:text-white">Analytics</Link>
-            <Link to="/reports" className="transition hover:text-white">Reports</Link>
+            <Link to="/finance" className="transition hover:text-white">Keuangan</Link>
+            <Link to="/reminder" className="transition hover:text-white">Reminder</Link>
+            <Link to="/schedule" className="transition hover:text-white">Jadwal</Link>
+            <Link to="/drive" className="transition hover:text-white">Drive</Link>
           </nav>
 
           <div className="flex items-center gap-3">
             <Link to="/login" className="rounded-xl px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white">
-              Login
+              Masuk
             </Link>
             <Link
               to="/dashboard"
@@ -54,13 +63,13 @@ export default function IndexPage() {
 
       <main className="mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-8 sm:pt-16">
         <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-2xl sm:p-12">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Digital Product Platform</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Family Organization Platform</p>
           <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl">
-            Bangun Produk yang Terlihat Premium, Terasa Cepat, dan Siap Scale.
+            Satu Aplikasi untuk Keuangan, Reminder, Jadwal, dan Drive Keluarga.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-            Landing page ini sekarang fokus ke visual yang lebih tegas dengan kontras kuat, hierarki teks jelas,
-            dan CTA yang langsung membawa user ke flow utama aplikasi.
+            Family App membantu keluarga tetap rapi setiap hari: saldo bulan ini, reminder terdekat,
+            agenda harian, dan file penting langsung terlihat dalam satu dashboard.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -68,14 +77,14 @@ export default function IndexPage() {
               to="/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-300 via-cyan-300 to-amber-300 px-6 py-3 font-bold text-slate-900 shadow-[0_8px_24px_rgba(34,211,238,0.34)] transition hover:-translate-y-0.5"
             >
-              Start Now
+              Mulai Sekarang
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              to="/users"
+              to="/finance"
               className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
             >
-              Lihat User Management
+              Kelola Keuangan
             </Link>
           </div>
         </section>
@@ -100,35 +109,35 @@ export default function IndexPage() {
 
         <section id="why" className="mt-8 grid gap-6 rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-900/80 p-6 sm:grid-cols-2 sm:p-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Why Teams Choose MyApp</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight">One Platform for Ops, Product, and Growth</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Kenapa Keluarga Memilih Family App</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight">Dashboard Harian Keluarga yang Jelas dan Ringkas</h2>
             <p className="mt-4 text-slate-300">
-              Navigasi cepat ke Analytics, Reports, Billing, sampai Settings dalam satu struktur yang konsisten dan
-              enak dipakai sehari-hari.
+              Buka aplikasi sekali, langsung lihat saldo bulan ini, pengeluaran, reminder terdekat,
+              jadwal hari ini, dan file terbaru tanpa pindah-pindah aplikasi.
             </p>
           </div>
 
           <div className="grid gap-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-cyan-300">
-                <BarChart3 className="h-4 w-4" />
-                <span className="text-sm font-semibold">Analytics Ready</span>
+                <ShieldCheck className="h-4 w-4" />
+                <span className="text-sm font-semibold">Aman untuk Keluarga</span>
               </div>
-              <p className="mt-2 text-sm text-slate-300">Pantau performa dengan panel visual yang lebih kaya dan actionable.</p>
+              <p className="mt-2 text-sm text-slate-300">Akses privat keluarga dengan route terproteksi dan logout global.</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center gap-2 text-amber-300">
-                <ArrowRight className="h-4 w-4" />
-                <span className="text-sm font-semibold">Workflow Friendly</span>
+                <FolderOpen className="h-4 w-4" />
+                <span className="text-sm font-semibold">Alur Kerja Terpadu</span>
               </div>
-              <p className="mt-2 text-sm text-slate-300">Transisi antar halaman lebih jelas, dari landing ke dashboard sampai report export.</p>
+              <p className="mt-2 text-sm text-slate-300">Mulai dari landing, lanjut ke dashboard, lalu kelola semua modul dengan alur konsisten.</p>
             </div>
           </div>
         </section>
       </main>
 
       <footer className="border-t border-white/10 py-6 text-center text-sm text-slate-400">
-        © 2026 MyApp. Crafted for high-performance teams.
+        © 2026 Family App. Dibuat untuk manajemen keluarga harian.
       </footer>
     </div>
   );

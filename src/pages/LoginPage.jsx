@@ -70,25 +70,25 @@ export default function PremiumLoginPage() {
           <div>
             <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white/90 shadow-lg">
               <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              Secure Workspace Access
+              Akses Aman Family App
             </div>
 
             <div className="mt-10 max-w-xl">
-              <p className="text-sm uppercase tracking-[0.35em] text-sky-300/80">Enterprise Suite</p>
+              <p className="text-sm uppercase tracking-[0.35em] text-sky-300/80">Family App</p>
               <h1 className="mt-5 text-5xl font-semibold leading-tight xl:text-6xl">
-                Login experience yang modern, premium, dan profesional.
+                Satu pintu masuk untuk keuangan, reminder, jadwal, dan drive keluarga.
               </h1>
               <p className="mt-6 text-lg leading-8 text-slate-300">
-                Didesain untuk produk digital kelas atas dengan visual elegan, struktur yang rapi, dan kesan terpercaya sejak interaksi pertama.
+                Masuk sekali untuk mengelola seluruh kebutuhan keluarga harian dengan tampilan yang rapi, cepat, dan nyaman.
               </p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { title: 'Encrypted', desc: 'Perlindungan berlapis untuk setiap sesi login.' },
-              { title: 'Fast Access', desc: 'Alur masuk singkat dengan UX yang efisien.' },
-              { title: 'Trusted', desc: 'Tampilan yang memberi rasa aman dan kredibel.' },
+              { title: 'Keuangan', desc: 'Pantau pemasukan, pengeluaran, dan target tabungan keluarga.' },
+              { title: 'Reminder', desc: 'Ingat tagihan dan acara penting tanpa terlewat.' },
+              { title: 'Drive', desc: 'Simpan dokumen penting, foto, dan video keluarga.' },
             ].map((item) => (
               <div
                 key={item.title}
@@ -105,20 +105,20 @@ export default function PremiumLoginPage() {
           <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
             <div className="mb-8 flex items-center justify-between">
               <div>
-                <p className="text-sm text-sky-300">Welcome back</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight">Sign in</h2>
+                <p className="text-sm text-sky-300">Selamat datang</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight">Masuk Family App</h2>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 text-lg font-bold shadow-lg">
-                S
+                F
               </div>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Email address</label>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Email</label>
                 <input
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder="nama@keluarga.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -128,14 +128,14 @@ export default function PremiumLoginPage() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="block text-sm font-medium text-slate-200">Password</label>
+                  <label className="block text-sm font-medium text-slate-200">Kata Sandi</label>
                   <button type="button" className="text-sm text-sky-300 transition hover:text-sky-200" disabled={isLoading}>
-                    Forgot password?
+                    Lupa kata sandi?
                   </button>
                 </div>
                 <input
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Masukkan kata sandi"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -152,10 +152,10 @@ export default function PremiumLoginPage() {
                     disabled={isLoading}
                     className="h-4 w-4 rounded border-white/20 bg-slate-900 disabled:opacity-60 cursor-pointer" 
                   />
-                  Remember me
+                  Ingat saya
                 </label>
                 <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">
-                  Protected login
+                  Akses aman
                 </span>
               </div>
 
@@ -164,11 +164,11 @@ export default function PremiumLoginPage() {
                 disabled={isLoading}
                 className="w-full rounded-2xl bg-gradient-to-r from-sky-400 via-cyan-400 to-indigo-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-xl transition hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Sedang masuk..." : "Masuk"}
               </button>
 
               <div className="relative py-2 text-center text-sm text-slate-400">
-                <span className="relative z-10 bg-transparent px-3">or continue with</span>
+                <span className="relative z-10 bg-transparent px-3">atau lanjut dengan</span>
                 <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-white/10" />
               </div>
 
@@ -191,9 +191,9 @@ export default function PremiumLoginPage() {
             </form>
 
             <p className="mt-8 text-center text-sm text-slate-400">
-              Belum punya akun?{' '}
+              Belum punya akun keluarga?{' '}
               <button type="button" disabled={isLoading} className="font-medium text-sky-300 hover:text-sky-200 disabled:opacity-60">
-                Create account
+                Buat akun
               </button>
             </p>
           </div>
